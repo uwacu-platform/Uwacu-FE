@@ -91,7 +91,7 @@ export default function UwacuFooter() {
   };
 
   return (
-    <footer id="contact" className="w-full relative overflow-hidden" style={{ backgroundColor: "#20603D" }}>
+    <footer id="contact" className="w-full relative overflow-hidden" style={{ backgroundColor: "#313A12" }}>
       {/* Subtle Imigongo pattern backdrop */}
       <div className="absolute inset-0 bg-imigongo-chevron opacity-[0.03] pointer-events-none" />
 

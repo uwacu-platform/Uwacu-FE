@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-green: #20603D;
+  --color-brand-green: #313A12;
   --color-brand-yellow: #FAD201;
   --color-brand-brown: #6B4F3A;
   --color-brand-charcoal: #1A1A1A;
   --color-brand-offwhite: #FAFAF7;
-  
+  --color-brand-white: #FFFFFF;
+
   --font-serif: "Merriweather", serif;
   --font-sans: "Inter", sans-serif;
 }

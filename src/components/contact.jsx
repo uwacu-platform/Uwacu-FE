@@ -15,7 +15,7 @@ export default function ContributeCulturalContent() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1590076215667-875d4ef2d7de?w=1600&q=80')",
+            "url('src/assets/amasunzu.png')",
         }}
       />
 

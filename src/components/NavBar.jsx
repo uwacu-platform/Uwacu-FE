@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const ChevronDown = () => (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -17,10 +18,10 @@ const UwacuIcon = () => (
 );
 
 const exploreItems = [
-  { label: "Culture & Heritage", href: "#heritage" },
-  { label: "Stories", href: "#gallery" },
-  { label: "Photography", href: "#gallery" },
-  { label: "Interactive Map", href: "#map" },
+  { label: "Culture & Heritage", to: "/culture" },
+  { label: "Stories", to: "/stories" },
+  { label: "Photography", to: "/photography" },
+  { label: "Interactive Map", to: "/map" },
 ];
 
 export default function UwacuNavbar() {
@@ -47,21 +48,21 @@ export default function UwacuNavbar() {
       <div className="max-w-7xl mx-auto px-10 h-[72px] flex items-center justify-between">
 
         {/* Logo */}
-        <a href="#" className="flex items-center gap-2.5 text-brand-white uppercase tracking-[0.2em] text-sm font-bold hover:text-brand-yellow transition-colors duration-300">
+        <Link to="/" className="flex items-center gap-2.5 text-brand-white uppercase tracking-[0.2em] text-sm font-bold hover:text-brand-yellow transition-colors duration-300">
           <span className="text-brand-yellow">
             <UwacuIcon />
           </span>
           UWACU
-        </a>
+        </Link>
 
         {/* Nav Links */}
         <ul className="hidden md:flex items-center gap-10 list-none m-0 p-0">
 
           <li>
-            <a href="#about" className="text-brand-white/90 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase transition-colors relative group font-sans">
-              About
+            <Link to="/about" className="text-brand-white/90 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase transition-colors relative group font-sans">
+              About Us
               <span className="absolute -bottom-1 left-0 w-0 h-px bg-brand-yellow transition-all duration-300 group-hover:w-full" />
-            </a>
+            </Link>
           </li>
 
           {/* Explore Dropdown */}
@@ -81,38 +82,39 @@ export default function UwacuNavbar() {
               }`}
             >
               {exploreItems.map((item) => (
-                <a
+                <Link
                   key={item.label}
-                  href={item.href}
+                  to={item.to}
+                  onClick={() => setExploreOpen(false)}
                   className="block px-6 py-2.5 text-[11px] tracking-[0.14em] uppercase text-brand-white/85 hover:text-brand-yellow hover:bg-brand-white/5 transition-all font-sans"
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </div>
           </li>
 
           <li>
-            <a href="#heritage" className="text-brand-white/90 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase transition-colors relative group font-sans">
+            <Link to="/get-involved" className="text-brand-white/90 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase transition-colors relative group font-sans">
               Get Involved
               <span className="absolute -bottom-1 left-0 w-0 h-px bg-brand-yellow transition-all duration-300 group-hover:w-full" />
-            </a>
+            </Link>
           </li>
 
           <li>
-            <a href="#gallery" className="text-brand-white/90 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase transition-colors relative group font-sans">
+            <Link to="/learn" className="text-brand-white/90 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase transition-colors relative group font-sans">
               Learn
               <span className="absolute -bottom-1 left-0 w-0 h-px bg-brand-yellow transition-all duration-300 group-hover:w-full" />
-            </a>
+            </Link>
           </li>
         </ul>
 
         {/* Contact Button */}
-        <a href="#contact"
+        <Link to="/contact"
            className="hidden md:inline-block bg-brand-brown hover:bg-brand-brown/90 text-brand-white text-xs tracking-[0.14em] uppercase px-6 py-2.5 rounded-sm font-semibold transition-all duration-200 hover:-translate-y-px shadow-md border border-brand-yellow/10"
         >
           Contact Us
-        </a>
+        </Link>
 
         {/* Hamburger */}
         <button
@@ -130,9 +132,9 @@ export default function UwacuNavbar() {
       {mobileOpen && (
         <div className="md:hidden bg-brand-green/98 backdrop-blur-xl border-t border-brand-yellow/15 px-6 pb-7 pt-2 flex flex-col">
 
-          <a href="#about" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
-            About
-          </a>
+          <Link to="/about" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
+            About Us
+          </Link>
 
           <button
             onClick={() => setMobileExploreOpen(!mobileExploreOpen)}
@@ -144,33 +146,33 @@ export default function UwacuNavbar() {
           {mobileExploreOpen && (
             <div className="pl-4">
               {exploreItems.map((item) => (
-                <a
+                <Link
                   key={item.label}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
+                  to={item.to}
+                  onClick={() => { setMobileOpen(false); setMobileExploreOpen(false); }}
                   className="block text-brand-white/65 hover:text-brand-yellow text-[11px] tracking-[0.14em] uppercase py-2.5 border-b border-brand-white/[0.04] transition-colors font-sans"
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </div>
           )}
 
-          <a href="#heritage" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
+          <Link to="/get-involved" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
             Get Involved
-          </a>
+          </Link>
 
-          <a href="#gallery" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
+          <Link to="/learn" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
             Learn
-          </a>
+          </Link>
 
-          <a
-            href="#contact"
+          <Link
+            to="/contact"
             onClick={() => setMobileOpen(false)}
             className="mt-5 bg-brand-brown text-brand-white text-xs tracking-[0.14em] uppercase py-3.5 text-center rounded-sm hover:bg-brand-brown/90 transition-colors font-sans font-semibold border border-brand-yellow/10"
           >
             Contact Us
-          </a>
+          </Link>
         </div>
       )}
     </nav>
