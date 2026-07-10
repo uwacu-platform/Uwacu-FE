@@ -133,7 +133,7 @@ export default function LandingPage() {
             />
             {/* Fallback high-res image if video doesn't play */}
             <img
-              src="src/assets/kuboha.png"
+              src="https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675950/kuboha_blthym.png"
               alt="Rwanda Hills"
               className="w-full h-full object-cover"
             />
@@ -200,7 +200,7 @@ export default function LandingPage() {
               className="relative rounded-sm overflow-hidden shadow-2xl aspect-[4/3] group border-4 border-brand-brown/10"
             >
               <img
-                src="src/assets/kuboha.png"
+                src="https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675950/kuboha_blthym.png"
                 alt="Beautiful Rwandan Landscape"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
@@ -270,25 +270,25 @@ export default function LandingPage() {
                 title: "Traditional Dance",
                 kiny: "Amatorero",
                 desc: "The heartbeat of celebration, recounting tales of ancient battles and communal victories.",
-                img: "src/assets/intore.png",
+                img: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675946/intore_zkvwpd.png",
               },
               {
                 title: "Arts & Crafts",
                 kiny: "Ububoshyi n'Ibihangano",
                 desc: "Agaseke baskets and Imigongo geometry representing unity, geometric beauty, and precision.",
-                img: "src/assets/imitako.png",
+                img: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675988/imitako_nrpegh.png",
               },
               {
                 title: "Traditional Clothing",
                 kiny: "Umushanana",
                 desc: "Elegant flowing silk and draped sashes representing grace, elegance, and respect for history.",
-                img: "src/assets/kuboha.png",
+                img: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675950/kuboha_blthym.png",
               },
               {
                 title: "Language & Identity",
                 kiny: "Ikinyarwanda",
                 desc: "The sacred tongue that binds all Rwandans, preserving our idioms, poetry, and values.",
-                img: "src/assets/iningiri.png",
+                img: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675949/iningiri_iimqnp.png",
               },
             ].map((card, idx) => (
               <motion.div
@@ -772,7 +772,7 @@ export default function LandingPage() {
                 url: "src/assets/imigongo.png",
                 aspect: "aspect-[3/2]"
               }
-              
+
             ].map((img, idx) => (
               <motion.div
                 key={idx}
