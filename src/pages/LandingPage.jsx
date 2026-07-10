@@ -339,7 +339,7 @@ export default function LandingPage() {
             {/* Massive Editorial Photo */}
             <div className="w-full lg:w-1/2 relative aspect-[4/5] rounded-sm overflow-hidden shadow-2xl border border-brand-white/10 group">
               <img
-                src="src/assets/intore.png"
+                src="https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675946/intore_zkvwpd.png"
                 alt="Intore Warrior Dancer"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
               />
@@ -395,7 +395,7 @@ export default function LandingPage() {
             {/* Image Right */}
             <div className="w-full lg:w-1/2 aspect-[4/3] rounded-sm overflow-hidden shadow-xl border-4 border-brand-brown/10 group">
               <img
-                src="src/assets/imitako.png"
+                src="https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675988/imitako_nrpegh.png"
                 alt="Rwandan Weaving and Arts"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
@@ -749,27 +749,27 @@ export default function LandingPage() {
           <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
             {[
               {
-                url: "src/assets/iningiri.png",
+                url: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675949/iningiri_iimqnp.png",
                 aspect: "aspect-[4/3]"
               },
               {
-                url: "src/assets/kuboha.png",
+                url: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675950/kuboha_blthym.png",
                 aspect: "aspect-[1/1]"
               },
               {
-                url: "src/assets/infunguro.png",
+                url: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675946/Kubumba_itwp9a.png",
                 aspect: "aspect-[3/4]"
               },
               {
-                url: "src/assets/icyokurya.png",
+                url: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675983/icyokurya_njld6t.png",
                 aspect: "aspect-[16/9]"
               },
               {
-                url: "src/assets/imitako.png",
+                url: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675988/imitako_nrpegh.png",
                 aspect: "aspect-[4/5]"
               },
               {
-                url: "src/assets/imigongo.png",
+                url: "https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675952/imigongo_ragrv9.png",
                 aspect: "aspect-[3/2]"
               }
 

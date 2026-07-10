@@ -15,7 +15,7 @@ export default function ContributeCulturalContent() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
-            "url('src/assets/amasunzu.png')",
+            "url('https://res.cloudinary.com/dhc6tmvvi/image/upload/v1783675966/amasunzu_guyxqo.png')",
         }}
       />
 
