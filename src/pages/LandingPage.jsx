@@ -128,7 +128,7 @@ export default function LandingPage() {
             transition={{ duration: 15, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
           >
             <source
-              src="src/assets/Visit Rwanda - The Land of a Thousand Hills.mp4"
+              src="https://res.cloudinary.com/dhc6tmvvi/video/upload/v1783676040/Visit_Rwanda_-_The_Land_of_a_Thousand_Hills_zzcyhg.mp4"
               type="video/mp4"
             />
             {/* Fallback high-res image if video doesn't play */}
