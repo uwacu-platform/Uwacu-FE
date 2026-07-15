@@ -30,6 +30,7 @@ const roleColors = {
   author: "bg-brand-yellow/20 text-brand-charcoal",
   student: "bg-brand-green/20 text-brand-green",
   instructor: "bg-brand-yellow text-brand-charcoal",
+  admin: "bg-brand-charcoal text-brand-yellow",
 };
 
 export default function UwacuNavbar() {
@@ -195,6 +196,16 @@ export default function UwacuNavbar() {
                       <span>🏫</span> Post a Course
                     </Link>
                   )}
+                  {user.role === "admin" && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setUserMenuOpen(false)}
+                      id="nav-admin"
+                      className="flex items-center gap-2.5 px-5 py-2.5 text-[11px] tracking-[0.1em] uppercase text-brand-yellow hover:bg-brand-white/5 transition-all font-sans font-bold bg-brand-charcoal/40"
+                    >
+                      <span>⚙️</span> Admin Panel
+                    </Link>
+                  )}
                   <button
                     onClick={handleLogout}
                     id="nav-logout"
@@ -298,6 +309,11 @@ export default function UwacuNavbar() {
               {user.role === "instructor" && (
                 <Link to="/learn/post" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
                   🏫 Post a Course
+                </Link>
+              )}
+              {user.role === "admin" && (
+                <Link to="/admin" onClick={() => setMobileOpen(false)} className="text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans font-bold">
+                  ⚙️ Admin Panel
                 </Link>
               )}
               <button

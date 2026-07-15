@@ -28,6 +28,12 @@ import PostStoryPage from "./pages/PostStoryPage";
 import CourseDetailPage from "./pages/CourseDetailPage";
 import PostCoursePage from "./pages/PostCoursePage";
 
+// Admin
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminEvents from "./pages/admin/AdminEvents";
+import AdminUsers from "./pages/admin/AdminUsers";
+
 gsap.registerPlugin(ScrollTrigger);
 
 /* Scroll to top on route change */
@@ -108,6 +114,20 @@ function AppInner() {
 
           {/* Contact */}
           <Route path="/contact" element={<ContactPage />} />
+
+          {/* Admin Routes */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="events" element={<AdminEvents />} />
+            <Route path="users" element={<AdminUsers />} />
+          </Route>
         </Routes>
       </main>
       <UwacuFooter />

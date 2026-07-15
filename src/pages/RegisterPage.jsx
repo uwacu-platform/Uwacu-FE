@@ -28,6 +28,12 @@ const roles = [
     icon: "🏫",
     desc: "Post courses and share knowledge",
   },
+  {
+    id: "admin",
+    label: "Admin",
+    icon: "⚙️",
+    desc: "Monitor and update the system",
+  },
 ];
 
 const UwacuIcon = () => (

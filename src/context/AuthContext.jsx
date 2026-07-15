@@ -6,7 +6,7 @@ const STORAGE_KEY = "uwacu_auth";
 const USERS_KEY = "uwacu_users";
 
 /* ── Helpers ── */
-function loadUsers() {
+export function loadUsers() {
   try {
     return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   } catch {
@@ -14,8 +14,17 @@ function loadUsers() {
   }
 }
 
-function saveUsers(users) {
+export function saveUsers(users) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+export function updateUser(userId, updates) {
+  const users = loadUsers();
+  const index = users.findIndex(u => u.id === userId);
+  if (index !== -1) {
+    users[index] = { ...users[index], ...updates };
+    saveUsers(users);
+  }
 }
 
 function loadSession() {
@@ -134,6 +143,88 @@ export const isStudent = (user) =>
 /* ── Stories / Courses localStorage helpers ── */
 const STORIES_KEY = "uwacu_stories";
 const COURSES_KEY = "uwacu_courses";
+const EVENTS_KEY = "uwacu_events";
+
+const defaultEvents = [
+  {
+    id: "e1",
+    title: "Umuganura — National Harvest Festival",
+    date: "August 7, 2026",
+    location: "Amahoro National Stadium, Kigali",
+    type: "National Ceremony",
+    desc: "Rwanda's national harvest festival — a celebration of gratitude, unity, and cultural pride. UWACU will document and broadcast the festivities for the global diaspora.",
+    img: "src/assets/dance.png",
+    featured: true,
+  },
+  {
+    id: "e2",
+    title: "Imigongo Masterclass — Kirehe Edition",
+    date: "July 19, 2026",
+    location: "Kirehe Cultural Centre, Eastern Province",
+    type: "Workshop",
+    desc: "An intensive one-day workshop with master Imigongo artist Clarisse Mukamana. Learn to design and apply traditional geometric patterns using authentic earth pigments.",
+    img: "src/assets/imigongo.png",
+    featured: false,
+  },
+  {
+    id: "e3",
+    title: "Night of Oral Traditions — Kigali",
+    date: "July 25, 2026",
+    location: "Inema Arts Center, Kacyiru",
+    type: "Cultural Evening",
+    desc: "An intimate evening of storytelling, proverb sharing, and praise poetry in Kinyarwanda. A rare opportunity to experience Rwanda's living oral heritage in its natural form.",
+    img: "src/assets/ingoma.png",
+    featured: false,
+  },
+  {
+    id: "e4",
+    title: "Digital Heritage Forum 2026",
+    date: "August 3, 2026",
+    location: "Virtual — Zoom Webinar",
+    type: "Online Forum",
+    desc: "A global conversation on preserving intangible cultural heritage through digital platforms, machine learning, and community participation. Speakers from 10+ countries.",
+    img: "src/assets/amasunzu.png",
+    featured: false,
+  },
+  {
+    id: "e5",
+    title: "Agaseke Basket Weaving Intensive",
+    date: "August 17, 2026",
+    location: "Musanze Cultural Village, Northern Province",
+    type: "Workshop",
+    desc: "Learn the art of Rwanda's iconic coiled grass baskets with community artisans. Participants will complete their own Agaseke piece to take home.",
+    img: "src/assets/uduseke.png",
+    featured: false,
+  },
+  {
+    id: "e6",
+    title: "Intore Dance Showcase",
+    date: "September 5, 2026",
+    location: "Rwanda Cultural Village, Butare",
+    type: "Performance",
+    desc: "A spectacular evening of traditional Intore warrior dance performed by Rwanda's most celebrated dance troupes. A visual and emotional experience not to be missed.",
+    img: "src/assets/intore.png",
+    featured: false,
+  },
+];
+
+export function loadEvents() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(EVENTS_KEY));
+    if (stored && stored.length > 0) return stored;
+    localStorage.setItem(EVENTS_KEY, JSON.stringify(defaultEvents));
+    return defaultEvents;
+  } catch {
+    return defaultEvents;
+  }
+}
+
+export function saveEvent(event) {
+  const events = loadEvents();
+  const updated = [event, ...events];
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(updated));
+  return updated;
+}
 
 export function loadStories() {
   try {

@@ -2,67 +2,13 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
+import { useState, useEffect } from "react";
+import { loadEvents } from "../context/AuthContext";
+
 const fadeUp = {
   hidden: { opacity: 0, y: 60 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
 };
-
-const upcoming = [
-  {
-    title: "Umuganura — National Harvest Festival",
-    date: "August 7, 2026",
-    location: "Amahoro National Stadium, Kigali",
-    type: "National Ceremony",
-    desc: "Rwanda's national harvest festival — a celebration of gratitude, unity, and cultural pride. UWACU will document and broadcast the festivities for the global diaspora.",
-    img: "src/assets/dance.png",
-    featured: true,
-  },
-  {
-    title: "Imigongo Masterclass — Kirehe Edition",
-    date: "July 19, 2026",
-    location: "Kirehe Cultural Centre, Eastern Province",
-    type: "Workshop",
-    desc: "An intensive one-day workshop with master Imigongo artist Clarisse Mukamana. Learn to design and apply traditional geometric patterns using authentic earth pigments.",
-    img: "src/assets/imigongo.png",
-    featured: false,
-  },
-  {
-    title: "Night of Oral Traditions — Kigali",
-    date: "July 25, 2026",
-    location: "Inema Arts Center, Kacyiru",
-    type: "Cultural Evening",
-    desc: "An intimate evening of storytelling, proverb sharing, and praise poetry in Kinyarwanda. A rare opportunity to experience Rwanda's living oral heritage in its natural form.",
-    img: "src/assets/ingoma.png",
-    featured: false,
-  },
-  {
-    title: "Digital Heritage Forum 2026",
-    date: "August 3, 2026",
-    location: "Virtual — Zoom Webinar",
-    type: "Online Forum",
-    desc: "A global conversation on preserving intangible cultural heritage through digital platforms, machine learning, and community participation. Speakers from 10+ countries.",
-    img: "src/assets/amasunzu.png",
-    featured: false,
-  },
-  {
-    title: "Agaseke Basket Weaving Intensive",
-    date: "August 17, 2026",
-    location: "Musanze Cultural Village, Northern Province",
-    type: "Workshop",
-    desc: "Learn the art of Rwanda's iconic coiled grass baskets with community artisans. Participants will complete their own Agaseke piece to take home.",
-    img: "src/assets/uduseke.png",
-    featured: false,
-  },
-  {
-    title: "Intore Dance Showcase",
-    date: "September 5, 2026",
-    location: "Rwanda Cultural Village, Butare",
-    type: "Performance",
-    desc: "A spectacular evening of traditional Intore warrior dance performed by Rwanda's most celebrated dance troupes. A visual and emotional experience not to be missed.",
-    img: "src/assets/intore.png",
-    featured: false,
-  },
-];
 
 const typeColors = {
   "National Ceremony": "bg-brand-yellow text-brand-charcoal",
@@ -73,6 +19,12 @@ const typeColors = {
 };
 
 export default function Events() {
+  const [upcoming, setUpcoming] = useState([]);
+
+  useEffect(() => {
+    setUpcoming(loadEvents());
+  }, []);
+
   const featured = upcoming.find((e) => e.featured);
   const rest = upcoming.filter((e) => !e.featured);
 
