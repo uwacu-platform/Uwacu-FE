@@ -1,66 +1,79 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth, loadCourses, canPostCourse } from "../context/AuthContext";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 60 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
 };
 
-const courses = [
+const seedCourses = [
   {
+    id: "c1",
     title: "Introduction to Kinyarwanda",
     level: "Beginner",
-    lessons: 12,
+    lessonCount: 12,
     duration: "4 weeks",
     desc: "Learn the foundations of Rwanda's national language — greetings, numbers, proverbs, and everyday phrases — taught through cultural context and storytelling.",
     img: "src/assets/ingoma.png",
     tag: "Language",
+    instructorName: "UWACU Academy",
   },
   {
+    id: "c2",
     title: "The Art of Imigongo",
     level: "All Levels",
-    lessons: 8,
+    lessonCount: 8,
     duration: "3 weeks",
     desc: "A hands-on guide to Rwanda's geometric mural tradition. Learn the symbolic vocabulary of Imigongo patterns, their historical origins, and how to create your own designs.",
     img: "src/assets/imigongo.png",
     tag: "Visual Arts",
+    instructorName: "Marie-Claire Mukamusoni",
   },
   {
+    id: "c3",
     title: "Rwandan Oral Traditions",
     level: "Intermediate",
-    lessons: 10,
+    lessonCount: 10,
     duration: "5 weeks",
     desc: "Explore the rich oral heritage of Rwanda — praise poetry (amazina), epic narratives (ibitekerezo), riddles (ibisakuzo), and their role in shaping communal identity.",
     img: "src/assets/amasunzu.png",
     tag: "History",
+    instructorName: "UWACU Academy",
   },
   {
+    id: "c4",
     title: "Understanding Umuganura",
     level: "All Levels",
-    lessons: 6,
+    lessonCount: 6,
     duration: "2 weeks",
     desc: "Dive deep into Rwanda's national harvest festival — its spiritual roots, community rituals, royal traditions, and contemporary revival as a symbol of national unity.",
     img: "src/assets/dance.png",
     tag: "Ceremony",
+    instructorName: "UWACU Academy",
   },
   {
+    id: "c5",
     title: "Traditional Rwandan Music",
     level: "Beginner",
-    lessons: 14,
+    lessonCount: 14,
     duration: "6 weeks",
     desc: "From the inanga zither to the ikembe thumb piano, this course covers Rwanda's traditional instruments, their tuning systems, and the cultural contexts in which they are played.",
     img: "src/assets/intore.png",
     tag: "Music",
+    instructorName: "UWACU Academy",
   },
   {
+    id: "c6",
     title: "Agaseke Basket Weaving",
     level: "All Levels",
-    lessons: 9,
+    lessonCount: 9,
     duration: "4 weeks",
     desc: "Rwanda's coiled grass baskets are among Africa's most celebrated crafts. Learn the symbolic patterns, proper techniques, and the social significance of Agaseke in Rwandan life.",
     img: "src/assets/uduseke.png",
     tag: "Craft",
+    instructorName: "UWACU Academy",
   },
 ];
 
@@ -72,6 +85,25 @@ const resources = [
 ];
 
 export default function Learn() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState("student"); // "student" | "instructor"
+
+  const userCourses = loadCourses();
+  const allCourses = [...seedCourses, ...userCourses];
+
+  const instructorCourses = user ? userCourses.filter((c) => c.instructorId === user.id) : [];
+
+  const displayCourses = viewMode === "instructor" ? instructorCourses : allCourses;
+
+  function handleEnrollClick(courseId) {
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/learn/${courseId}`)}`);
+    } else {
+      navigate(`/learn/${courseId}`);
+    }
+  }
+
   return (
     <div className="w-full overflow-hidden bg-brand-offwhite">
 
@@ -108,7 +140,7 @@ export default function Learn() {
       <div className="bg-brand-green py-10">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-3 gap-8 text-center">
           {[
-            { num: "24", label: "Cultural Courses" },
+            { num: allCourses.length.toString(), label: "Cultural Courses" },
             { num: "1,200+", label: "Active Learners" },
             { num: "8", label: "Languages Available" },
           ].map((stat, i) => (
@@ -123,55 +155,116 @@ export default function Learn() {
       {/* ── COURSES ── */}
       <section className="py-24 lg:py-32 bg-brand-offwhite">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <motion.div
-            className="text-center mb-16"
-            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-          >
-            <span className="text-brand-brown font-bold tracking-[0.22em] uppercase text-xs block mb-3 font-sans">AMASOMO YACU</span>
-            <h2 className="text-section-title text-brand-green">Our Courses</h2>
-            <div className="w-20 h-[2px] bg-brand-yellow mx-auto mt-4" />
-          </motion.div>
+          
+          <div className="flex flex-col items-center mb-16">
+            <motion.div
+              className="text-center"
+              variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+            >
+              <span className="text-brand-brown font-bold tracking-[0.22em] uppercase text-xs block mb-3 font-sans">AMASOMO YACU</span>
+              <h2 className="text-section-title text-brand-green">Our Courses</h2>
+              <div className="w-20 h-[2px] bg-brand-yellow mx-auto mt-4 mb-8" />
+            </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.map((course, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.08 }}
-                whileHover={{ y: -6 }}
-                className="group bg-brand-white rounded-sm border border-brand-brown/10 shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-300 flex flex-col cursor-pointer"
-              >
-                <div className="h-48 overflow-hidden relative">
-                  <img
-                    src={course.img}
-                    alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/60 to-transparent" />
-                  <span className="absolute top-4 left-4 bg-brand-yellow text-brand-charcoal text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-sm font-sans">
-                    {course.tag}
-                  </span>
-                  <span className="absolute bottom-4 right-4 text-brand-white/70 text-[10px] font-sans bg-brand-charcoal/60 px-2 py-1 rounded-sm">
-                    {course.level}
-                  </span>
-                </div>
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="font-serif font-bold text-brand-green text-lg mb-3 leading-snug group-hover:text-brand-brown transition-colors">
-                    {course.title}
-                  </h3>
-                  <p className="text-small-custom text-brand-charcoal/65 leading-relaxed mb-5 flex-grow">
-                    {course.desc}
-                  </p>
-                  <div className="flex items-center justify-between text-[10px] text-brand-charcoal/40 font-sans border-t border-brand-brown/10 pt-4 mt-auto">
-                    <span>{course.lessons} lessons</span>
-                    <span>{course.duration}</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+            {/* Role Tabs */}
+            {canPostCourse(user) && (
+              <div className="flex gap-1 bg-brand-white border border-brand-brown/15 rounded-sm p-1">
+                <button
+                  onClick={() => setViewMode("student")}
+                  className={`px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest rounded-sm transition-all font-sans ${
+                    viewMode === "student" ? "bg-brand-green text-brand-white shadow-sm" : "text-brand-charcoal/50 hover:text-brand-green"
+                  }`}
+                >
+                  Student View
+                </button>
+                <button
+                  onClick={() => setViewMode("instructor")}
+                  className={`px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest rounded-sm transition-all font-sans ${
+                    viewMode === "instructor" ? "bg-brand-yellow text-brand-charcoal shadow-sm" : "text-brand-charcoal/50 hover:text-brand-yellow"
+                  }`}
+                >
+                  Instructor View
+                </button>
+              </div>
+            )}
           </div>
+
+          {/* Instructor Actions */}
+          {viewMode === "instructor" && (
+            <div className="mb-10 flex justify-end">
+              <Link
+                to="/learn/post"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-yellow hover:bg-brand-yellow/90 text-brand-charcoal text-xs font-bold uppercase tracking-widest rounded-sm transition-all shadow-md"
+              >
+                <span>🏫</span> Post New Course
+              </Link>
+            </div>
+          )}
+
+          {/* Course Grid */}
+          {displayCourses.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {displayCourses.map((course, i) => (
+                <motion.div
+                  key={course.id}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: i * 0.08 }}
+                  whileHover={{ y: -6 }}
+                  onClick={() => handleEnrollClick(course.id)}
+                  className="group bg-brand-white rounded-sm border border-brand-brown/10 shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-300 flex flex-col cursor-pointer"
+                >
+                  <div className="h-48 overflow-hidden relative">
+                    <img
+                      src={course.img}
+                      alt={course.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-charcoal/60 to-transparent" />
+                    <span className="absolute top-4 left-4 bg-brand-yellow text-brand-charcoal text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-sm font-sans">
+                      {course.tag}
+                    </span>
+                    <span className="absolute bottom-4 right-4 text-brand-white/70 text-[10px] font-sans bg-brand-charcoal/60 px-2 py-1 rounded-sm">
+                      {course.level}
+                    </span>
+                  </div>
+                  <div className="p-6 flex flex-col flex-grow">
+                    <h3 className="font-serif font-bold text-brand-green text-lg mb-2 leading-snug group-hover:text-brand-brown transition-colors">
+                      {course.title}
+                    </h3>
+                    <p className="text-[11px] text-brand-charcoal/50 font-sans mb-3 uppercase tracking-wider font-semibold">
+                      By {course.instructorName}
+                    </p>
+                    <p className="text-small-custom text-brand-charcoal/65 leading-relaxed mb-5 flex-grow line-clamp-3">
+                      {course.desc}
+                    </p>
+                    <div className="flex items-center justify-between text-[10px] text-brand-charcoal/40 font-sans border-t border-brand-brown/10 pt-4 mt-auto mb-4">
+                      <span>{course.lessonCount} lessons</span>
+                      <span>{course.duration}</span>
+                    </div>
+                    
+                    <button className="w-full py-2.5 border border-brand-green/30 text-brand-green group-hover:bg-brand-green group-hover:text-brand-white text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all duration-300 font-sans">
+                      {user ? "View Course" : "Sign In to Enroll"}
+                    </button>
+
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-brand-white border border-brand-brown/10 rounded-sm">
+              <span className="text-4xl block mb-4">🏫</span>
+              <h3 className="font-serif font-bold text-brand-green text-xl mb-2">No Courses Yet</h3>
+              <p className="text-brand-charcoal/60 font-sans text-sm mb-6">You haven't posted any courses.</p>
+              <Link
+                to="/learn/post"
+                className="inline-block px-6 py-3 bg-brand-yellow text-brand-charcoal text-xs font-bold uppercase tracking-widest rounded-sm transition-all"
+              >
+                Create Your First Course
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

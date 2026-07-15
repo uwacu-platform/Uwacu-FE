@@ -16,6 +16,18 @@ import Events from "./pages/Events";
 import UwacuFooter from "./components/Footer";
 import ContactPage from "./pages/ContactPage";
 
+// Auth & Protected Routes
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+
+// Dynamic / Protected Features
+import StoryDetailPage from "./pages/StoryDetailPage";
+import PostStoryPage from "./pages/PostStoryPage";
+import CourseDetailPage from "./pages/CourseDetailPage";
+import PostCoursePage from "./pages/PostCoursePage";
+
 gsap.registerPlugin(ScrollTrigger);
 
 /* Scroll to top on route change */
@@ -61,14 +73,36 @@ function AppInner() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutUs />} />
 
+          {/* Auth */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
           {/* Explore dropdown */}
           <Route path="/culture" element={<CultureHeritage />} />
           <Route path="/stories" element={<Stories />} />
+          <Route path="/stories/:id" element={<StoryDetailPage />} />
+          <Route 
+            path="/stories/post" 
+            element={
+              <ProtectedRoute roles={["author", "instructor"]}>
+                <PostStoryPage />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/photography" element={<Photography />} />
           <Route path="/map" element={<InteractiveMap />} />
 
           {/* Nav links */}
           <Route path="/learn" element={<Learn />} />
+          <Route path="/learn/:courseId" element={<CourseDetailPage />} />
+          <Route 
+            path="/learn/post" 
+            element={
+              <ProtectedRoute roles={["instructor"]}>
+                <PostCoursePage />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/get-involved" element={<MarketPlace />} />
           <Route path="/events" element={<Events />} />
 
@@ -83,9 +117,11 @@ function AppInner() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <AppInner />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <ScrollToTop />
+        <AppInner />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

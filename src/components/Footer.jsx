@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const PinterestIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -35,25 +36,25 @@ const LinkedInIcon = () => (
 );
 
 const menuLinks = [
-  { label: "About Us", href: "#about" },
-  { label: "Culture & Heritage", href: "#heritage" },
-  { label: "Tourism Highlights", href: "#tourism" },
-  { label: "Photo Gallery", href: "#gallery" },
-  { label: "Get Involved", href: "#contact" }
+  { label: "About Us", href: "/about" },
+  { label: "Culture & Heritage", href: "/culture" },
+  { label: "Stories", href: "/stories" },
+  { label: "Photo Gallery", href: "/photography" },
+  { label: "Get Involved", href: "/get-involved" }
 ];
 
 const exploreLinks = [
-  { label: "Intore Dance", href: "#dance" },
-  { label: "Traditional Arts", href: "#arts" },
-  { label: "National Statistics", href: "#stats" },
-  { label: "Interactive Map", href: "#map" }
+  { label: "Intore Dance", href: "/culture" },
+  { label: "Traditional Arts", href: "/culture" },
+  { label: "Events", href: "/events" },
+  { label: "Interactive Map", href: "/map" }
 ];
 
 const getInvolvedLinks = [
-  { label: "Share Your Story", href: "#contact" },
-  { label: "Contribute Content", href: "#contact" },
-  { label: "Support the Platform", href: "#contact" },
-  { label: "Contact Us", href: "#contact" }
+  { label: "Share Your Story", href: "/stories/post" },
+  { label: "Contribute Content", href: "/learn/post" },
+  { label: "Learn", href: "/learn" },
+  { label: "Contact Us", href: "/contact" }
 ];
 
 const socialLinks = [
@@ -70,9 +71,9 @@ const FooterColumn = ({ title, links }) => (
     <ul className="flex flex-col gap-3 p-0 list-none m-0">
       {links.map((item) => (
         <li key={item.label}>
-          <a href={item.href} className="text-brand-offwhite/80 text-sm hover:text-brand-yellow transition-colors duration-200 font-sans">
+          <Link to={item.href} className="text-brand-offwhite/80 text-sm hover:text-brand-yellow transition-colors duration-200 font-sans">
             {item.label}
-          </a>
+          </Link>
         </li>
       ))}
     </ul>

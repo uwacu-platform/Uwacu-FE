@@ -1,17 +1,18 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth, canPostStory, loadStories } from "../context/AuthContext";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 60 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
 };
 
-const categories = ["All", "Tradition", "Community", "Arts", "Land"];
+const categories = ["All", "Tradition", "Community", "Arts", "Land", "Family", "History"];
 
-const stories = [
+const seedStories = [
   {
-    id: 1,
+    id: "1",
     category: "Tradition",
     title: "The Last Inanga Keeper of Musanze",
     excerpt:
@@ -23,7 +24,7 @@ const stories = [
     featured: true,
   },
   {
-    id: 2,
+    id: "2",
     category: "Community",
     title: "Umuganda: When a Nation Builds Together",
     excerpt:
@@ -35,7 +36,7 @@ const stories = [
     featured: false,
   },
   {
-    id: 3,
+    id: "3",
     category: "Arts",
     title: "Imigongo: The Geometry of Memory",
     excerpt:
@@ -47,7 +48,7 @@ const stories = [
     featured: false,
   },
   {
-    id: 4,
+    id: "4",
     category: "Land",
     title: "The Thousand Hills at Golden Hour",
     excerpt:
@@ -59,7 +60,7 @@ const stories = [
     featured: false,
   },
   {
-    id: 5,
+    id: "5",
     category: "Tradition",
     title: "Gusaba: The Language of Asking",
     excerpt:
@@ -71,7 +72,7 @@ const stories = [
     featured: false,
   },
   {
-    id: 6,
+    id: "6",
     category: "Arts",
     title: "The Intore Warriors Dance Again",
     excerpt:
@@ -85,14 +86,32 @@ const stories = [
 ];
 
 export default function Stories() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("All");
+
+  // Merge seed + user-submitted stories
+  const userStories = loadStories();
+  const allStories = [...seedStories, ...userStories];
 
   const filtered =
     activeCategory === "All"
-      ? stories
-      : stories.filter((s) => s.category === activeCategory);
+      ? allStories
+      : allStories.filter((s) => s.category === activeCategory);
 
-  const featured = stories.find((s) => s.featured);
+  const featured = seedStories.find((s) => s.featured);
+
+  function handlePostStory() {
+    if (!user) {
+      navigate("/login?redirect=/stories/post");
+      return;
+    }
+    if (!canPostStory(user)) {
+      alert("Only Authors and Instructors can post stories. Please register with an Author role.");
+      return;
+    }
+    navigate("/stories/post");
+  }
 
   return (
     <div className="w-full overflow-hidden bg-brand-offwhite">
@@ -120,9 +139,17 @@ export default function Stories() {
           </span>
           <h1 className="text-hero leading-tight mb-6">Stories</h1>
           <div className="w-20 h-[2px] bg-brand-yellow mx-auto mb-8" />
-          <p className="text-body-custom text-white/80 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-body-custom text-white/80 max-w-2xl mx-auto leading-relaxed mb-10">
             Every community has its storytellers. Every hill has its tale. Here is where UWACU collects and preserves the voices of Rwanda — past, present, and emerging.
           </p>
+          {/* Hero CTA */}
+          <button
+            onClick={handlePostStory}
+            id="hero-post-story"
+            className="inline-block px-8 py-4 bg-brand-yellow hover:bg-brand-yellow/90 text-brand-charcoal text-xs tracking-[0.18em] uppercase rounded-sm font-bold transition-all duration-300 hover:scale-105 shadow-xl"
+          >
+            Share Your Story
+          </button>
         </motion.div>
       </section>
 
@@ -158,12 +185,16 @@ export default function Stories() {
                   <span>·</span>
                   <span>{featured.readTime} read</span>
                 </div>
-                <button className="inline-flex items-center gap-2 text-brand-green hover:text-brand-brown text-xs font-bold uppercase tracking-widest font-sans transition-colors group">
-                  Read Full Story
+                <Link
+                  to={`/stories/${featured.id}`}
+                  id="featured-read-btn"
+                  className="inline-flex items-center gap-2 text-brand-green hover:text-brand-brown text-xs font-bold uppercase tracking-widest font-sans transition-colors group"
+                >
+                  {user ? "Read Full Story" : "Read Story (Sign in to access full)"}
                   <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
-                </button>
+                </Link>
               </div>
             </motion.div>
           </div>
@@ -220,7 +251,7 @@ export default function Stories() {
                 >
                   <div className="h-52 overflow-hidden relative">
                     <img
-                      src={story.img}
+                      src={story.img || "src/assets/amasunzu.png"}
                       alt={story.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
@@ -228,6 +259,11 @@ export default function Stories() {
                     <span className="absolute top-4 left-4 bg-brand-yellow text-brand-charcoal text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-sm font-sans">
                       {story.category}
                     </span>
+                    {story.isUserStory && (
+                      <span className="absolute top-4 right-4 bg-brand-green text-brand-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-sm font-sans">
+                        Community
+                      </span>
+                    )}
                   </div>
                   <div className="p-6 flex flex-col flex-grow">
                     <h3 className="font-serif font-bold text-brand-green text-lg mb-3 leading-snug group-hover:text-brand-brown transition-colors">
@@ -236,10 +272,20 @@ export default function Stories() {
                     <p className="text-small-custom text-brand-charcoal/65 leading-relaxed mb-5 flex-grow">
                       {story.excerpt}
                     </p>
-                    <div className="flex items-center justify-between text-[10px] text-brand-charcoal/40 font-sans border-t border-brand-brown/10 pt-4 mt-auto">
+                    <div className="flex items-center justify-between text-[10px] text-brand-charcoal/40 font-sans border-t border-brand-brown/10 pt-4 mt-auto mb-4">
                       <span>{story.author}</span>
                       <span>{story.readTime} read</span>
                     </div>
+                    <Link
+                      to={`/stories/${story.id}`}
+                      id={`read-story-${story.id}`}
+                      className="flex items-center justify-center gap-2 py-2.5 border border-brand-green/30 hover:border-brand-green hover:bg-brand-green text-brand-green hover:text-brand-white text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all duration-300 font-sans group/btn"
+                    >
+                      {user ? "Read Full Story" : "🔒 Sign In to Read"}
+                      <svg className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </Link>
                   </div>
                 </motion.article>
               ))}
@@ -261,12 +307,13 @@ export default function Stories() {
           <p className="text-body-custom text-white/75 mb-10 leading-relaxed">
             Every Rwandan carries a story worth telling. Submit your memories, traditions, and experiences to become part of UWACU's permanent cultural archive.
           </p>
-          <Link
-            to="/about"
+          <button
+            onClick={handlePostStory}
+            id="cta-post-story"
             className="inline-block px-8 py-4 bg-brand-brown hover:bg-brand-brown/90 text-brand-white text-xs tracking-[0.18em] uppercase rounded-sm font-semibold transition-all duration-300 hover:scale-105 shadow-xl border border-brand-yellow/20"
           >
-            Contact the Team
-          </Link>
+            {user ? (canPostStory(user) ? "Post a Story" : "Register as Author") : "Sign In to Share"}
+          </button>
         </div>
       </motion.section>
 
