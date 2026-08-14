@@ -1,7 +1,9 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth, loadCourses, enrollInCourse } from "../context/AuthContext";
-import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+import { getCourse } from "../services/courseService.js";
+import { enrollInCourseAPI } from "../services/courseService.js";
 
 // Same seed courses as Learn.jsx to ensure they can be viewed
 const seedCourses = [
@@ -53,11 +55,62 @@ export default function CourseDetailPage() {
   const navigate = useNavigate();
 
   const [enrolling, setEnrolling] = useState(false);
+  const [enrollSuccess, setEnrollSuccess] = useState(false);
+  const [enrollError, setEnrollError] = useState(null);
 
-  // Merge seed + user courses
-  const userCourses = loadCourses();
-  const allCourses = [...seedCourses, ...userCourses];
-  const course = allCourses.find((c) => String(c.id) === String(courseId));
+  // Course fetched from API (overrides seed if found)
+  const [apiCourse, setApiCourse] = useState(null);
+  const [fetching, setFetching] = useState(true);
+
+  useEffect(() => {
+    setFetching(true);
+    getCourse(courseId)
+      .then((data) => {
+        // Normalize API shape to UI shape
+        const c = data?.course || data;
+        setApiCourse({
+          id: c.id,
+          title: c.title,
+          desc: c.description || c.desc || "",
+          img: c.thumbnail || c.img || "src/assets/Kubumba.png",
+          tag: c.category || c.tag || "Culture",
+          level: c.level || "All Levels",
+          lessonCount: c.lesson_count || c.lessonCount || 0,
+          duration: c.duration || "Self-paced",
+          price: c.price,
+          instructorName:
+            c.instructor_name ||
+            c.instructorName ||
+            (c.instructor
+              ? `${c.instructor.first_name || ""} ${c.instructor.last_name || ""}`.trim()
+              : "UWACU Academy"),
+          instructorId: c.instructor_id || c.instructorId,
+          lessons: c.lessons || [],
+        });
+      })
+      .catch(() => {
+        // Not found in API — will fall back to seed courses
+        setApiCourse(null);
+      })
+      .finally(() => setFetching(false));
+  }, [courseId]);
+
+  // Use API course if fetched, otherwise seed
+  const course =
+    apiCourse ||
+    seedCourses.find((c) => String(c.id) === String(courseId)) ||
+    null;
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen bg-brand-offwhite flex items-center justify-center pt-20">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-brand-green border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-brand-charcoal/50 font-sans text-sm">Loading course…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!course) {
     return (
@@ -78,19 +131,22 @@ export default function CourseDetailPage() {
   const isInstructor = user && (user.id === course.instructorId || user.role === "instructor");
   const hasAccess = isEnrolled || isInstructor;
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (!user) {
       navigate(`/login?redirect=${encodeURIComponent(`/learn/${courseId}`)}`);
       return;
     }
-    
     setEnrolling(true);
-    // Simulate network delay
-    setTimeout(() => {
-      enrollInCourse(user.id, course.id);
-      refreshUser();
+    setEnrollError(null);
+    try {
+      await enrollInCourseAPI(course.id);
+      await refreshUser();
+      setEnrollSuccess(true);
+    } catch (err) {
+      setEnrollError(err.message || "Enrollment failed. Please try again.");
+    } finally {
       setEnrolling(false);
-    }, 800);
+    }
   };
 
   return (
@@ -256,6 +312,11 @@ export default function CourseDetailPage() {
                 >
                   {enrolling ? "Enrolling..." : "Enroll for Free"}
                 </button>
+                {enrollError && (
+                  <div className="mt-3 px-3 py-2 bg-red-50 border border-red-200 rounded-sm text-red-600 text-[11px] font-sans text-center">
+                    {enrollError}
+                  </div>
+                )}
                 <p className="text-center text-[10px] text-brand-charcoal/40 font-sans mt-4">
                   Takes less than a minute. No credit card required.
                 </p>

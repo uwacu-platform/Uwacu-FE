@@ -1,118 +1,210 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  loginUser,
+  registerUser,
+  getProfile,
+  logoutUser,
+} from "../services/authService.js";
+import { getToken } from "../services/api.js";
 
 const AuthContext = createContext(null);
 
-const STORAGE_KEY = "uwacu_auth";
-const USERS_KEY = "uwacu_users";
+const SESSION_KEY = "uwacu_auth_user";
 
-/* ── Helpers ── */
-export function loadUsers() {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-export function updateUser(userId, updates) {
-  const users = loadUsers();
-  const index = users.findIndex(u => u.id === userId);
-  if (index !== -1) {
-    users[index] = { ...users[index], ...updates };
-    saveUsers(users);
-  }
-}
-
+/* ── Session persistence helpers ─────────────────────────────────────────── */
 function loadSession() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+    return JSON.parse(localStorage.getItem(SESSION_KEY)) || null;
   } catch {
     return null;
   }
 }
 
-/* ── Provider ── */
+function saveSession(user) {
+  if (user) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
+
+/* ── Provider ─────────────────────────────────────────────────────────────── */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => loadSession());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Persist session on change
+  // On mount, if we have a stored token, refresh profile from API
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
+    const token = getToken();
+    if (token && !user) {
+      setLoading(true);
+      getProfile()
+        .then((profile) => {
+          const session = normalizeUser(profile);
+          setUser(session);
+          saveSession(session);
+        })
+        .catch(() => {
+          // Token is invalid or expired — clear everything
+          logoutUser();
+          setUser(null);
+          saveSession(null);
+        })
+        .finally(() => setLoading(false));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist user session to localStorage whenever it changes
+  useEffect(() => {
+    saveSession(user);
   }, [user]);
 
-  /* Register */
-  const register = useCallback(({ name, email, password, role }) => {
-    setError(null);
-    const users = loadUsers();
-    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      setError("An account with this email already exists.");
-      return false;
-    }
-    const newUser = {
-      id: `u_${Date.now()}`,
-      name,
-      email: email.toLowerCase(),
-      password, // stored plaintext — prototype only
-      role, // reader | author | student | instructor
-      joinedAt: new Date().toISOString(),
-      enrolledCourses: [],
-      postedStories: [],
-      postedCourses: [],
+  /**
+   * Normalize the API user object to a flat shape the UI expects.
+   * The backend may return different field names, so we map them here.
+   */
+  function normalizeUser(apiUser) {
+    return {
+      id: apiUser.id,
+      // Support both "name" (legacy) and first_name + last_name (API)
+      name:
+        apiUser.name ||
+        [apiUser.first_name, apiUser.last_name].filter(Boolean).join(" ") ||
+        apiUser.username ||
+        apiUser.email,
+      username: apiUser.username,
+      email: apiUser.email,
+      first_name: apiUser.first_name,
+      last_name: apiUser.last_name,
+      bio: apiUser.bio,
+      // The API uses "instructor", "learner", "vendor", "admin" roles
+      role: apiUser.role,
+      joinedAt: apiUser.created_at || apiUser.joinedAt || new Date().toISOString(),
+      enrolledCourses: apiUser.enrolledCourses || [],
     };
-    saveUsers([...users, newUser]);
-    // Auto-login after register (omit password from session)
-    const session = { ...newUser };
-    delete session.password;
-    setUser(session);
-    return true;
-  }, []);
+  }
 
-  /* Login */
-  const login = useCallback(({ email, password }) => {
+  /* ── Register ─────────────────────────────────────────────────────────── */
+  const register = useCallback(async ({ name, email, password, role }) => {
     setError(null);
-    const users = loadUsers();
-    const found = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-    if (!found) {
-      setError("Invalid email or password.");
-      return false;
-    }
-    const session = { ...found };
-    delete session.password;
-    setUser(session);
-    return true;
-  }, []);
+    setLoading(true);
+    try {
+      // Split name into first/last for the API
+      const parts = (name || "").trim().split(" ");
+      const first_name = parts[0] || "";
+      const last_name = parts.slice(1).join(" ") || "";
+      // Generate a username from email (API requires it)
+      const username = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_");
 
-  /* Logout */
-  const logout = useCallback(() => {
-    setUser(null);
-  }, []);
+      let data;
+      try {
+        data = await registerUser({
+          email,
+          username,
+          password,
+          first_name,
+          last_name,
+          role,
+        });
+      } catch (apiErr) {
+        // If network reset / server down, use local session fallback so user is not blocked
+        if (apiErr.isNetworkError) {
+          console.warn("API server connection reset/offline. Falling back to local account session.", apiErr.message);
+          const fallbackUser = {
+            id: `u_${Date.now()}`,
+            name,
+            username,
+            email: email.toLowerCase(),
+            role,
+            joinedAt: new Date().toISOString(),
+            enrolledCourses: [],
+          };
+          const users = loadUsers();
+          saveUsers([...users, { ...fallbackUser, password }]);
+          setUser(fallbackUser);
+          return true;
+        }
+        throw apiErr;
+      }
 
-  /* Refresh user data from localStorage (after posting story/course) */
-  const refreshUser = useCallback(() => {
-    if (!user) return;
-    const users = loadUsers();
-    const updated = users.find((u) => u.id === user.id);
-    if (updated) {
-      const session = { ...updated };
-      delete session.password;
+      // Try to get the full profile after registration
+      let session;
+      try {
+        const profile = await getProfile();
+        session = normalizeUser(profile);
+      } catch {
+        // Fallback: build from the registration response
+        session = normalizeUser({ email, username, first_name, last_name, role, ...data?.user });
+      }
+
       setUser(session);
+      return true;
+    } catch (err) {
+      setError(err.message || "Registration failed. Please try again.");
+      return false;
+    } finally {
+      setLoading(false);
     }
-  }, [user]);
+  }, []);
 
-  /* Clear error */
+  /* ── Login ────────────────────────────────────────────────────────────── */
+  const login = useCallback(async ({ email, password }) => {
+    setError(null);
+    setLoading(true);
+    try {
+      try {
+        await loginUser({ email, password });
+        const profile = await getProfile();
+        const session = normalizeUser(profile);
+        setUser(session);
+        return true;
+      } catch (apiErr) {
+        if (apiErr.isNetworkError) {
+          // Check local users fallback
+          const users = loadUsers();
+          const found = users.find(
+            (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+          );
+          if (found) {
+            const session = { ...found };
+            delete session.password;
+            setUser(session);
+            return true;
+          }
+        }
+        throw apiErr;
+      }
+    } catch (err) {
+      setError(err.message || "Invalid email or password.");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /* ── Logout ───────────────────────────────────────────────────────────── */
+  const logout = useCallback(() => {
+    logoutUser();
+    setUser(null);
+    saveSession(null);
+  }, []);
+
+  /* ── Refresh user from API ────────────────────────────────────────────── */
+  const refreshUser = useCallback(async () => {
+    if (!getToken()) return;
+    try {
+      const profile = await getProfile();
+      const session = normalizeUser(profile);
+      setUser(session);
+      saveSession(session);
+    } catch {
+      // Silently fail — keep existing user
+    }
+  }, []);
+
+  /* ── Clear error ──────────────────────────────────────────────────────── */
   const clearError = useCallback(() => setError(null), []);
 
   return (
@@ -124,25 +216,36 @@ export function AuthProvider({ children }) {
   );
 }
 
-/* ── Hook ── */
+/* ── Hook ─────────────────────────────────────────────────────────────────── */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
   return ctx;
 }
 
-/* ── Role helpers ── */
+/* ── Role helpers ─────────────────────────────────────────────────────────── */
+// API roles: "instructor", "learner", "vendor", "admin"
+// Legacy UI roles: "author", "instructor", "student", "reader"
 export const canPostStory = (user) =>
-  user && (user.role === "author" || user.role === "instructor");
+  user &&
+  (user.role === "author" ||
+    user.role === "instructor" ||
+    user.role === "vendor");
 
-export const canPostCourse = (user) => user && user.role === "instructor";
+export const canPostCourse = (user) =>
+  user && (user.role === "instructor" || user.role === "vendor");
 
 export const isStudent = (user) =>
-  user && (user.role === "student" || user.role === "instructor");
+  user &&
+  (user.role === "student" ||
+    user.role === "learner" ||
+    user.role === "instructor");
 
-/* ── Stories / Courses localStorage helpers ── */
+/* ──────────────────────────────────────────────────────────────────────────
+   LOCAL STORAGE HELPERS — kept for Stories & Events which are not yet backed
+   by a backend API. These are NOT touched by the auth refactor.
+   ────────────────────────────────────────────────────────────────────────── */
 const STORIES_KEY = "uwacu_stories";
-const COURSES_KEY = "uwacu_courses";
 const EVENTS_KEY = "uwacu_events";
 
 const defaultEvents = [
@@ -241,6 +344,34 @@ export function saveStory(story) {
   return updated;
 }
 
+/* ── Legacy Admin Helpers (localStorage-backed) ──────────────────────────────
+   The Postman collection does not expose a user-listing or course-listing
+   endpoint for admins, so these remain localStorage-based for now.
+   ────────────────────────────────────────────────────────────────────────── */
+const USERS_KEY = "uwacu_users";
+const COURSES_KEY = "uwacu_courses";
+
+export function loadUsers() {
+  try {
+    return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+export function updateUser(userId, updates) {
+  const users = loadUsers();
+  const index = users.findIndex((u) => u.id === userId);
+  if (index !== -1) {
+    users[index] = { ...users[index], ...updates };
+    saveUsers(users);
+  }
+}
+
 export function loadCourses() {
   try {
     return JSON.parse(localStorage.getItem(COURSES_KEY)) || [];
@@ -254,15 +385,4 @@ export function saveCourse(course) {
   const updated = [course, ...courses];
   localStorage.setItem(COURSES_KEY, JSON.stringify(updated));
   return updated;
-}
-
-export function enrollInCourse(userId, courseId) {
-  const users = loadUsers();
-  const idx = users.findIndex((u) => u.id === userId);
-  if (idx === -1) return;
-  if (!users[idx].enrolledCourses) users[idx].enrolledCourses = [];
-  if (!users[idx].enrolledCourses.includes(courseId)) {
-    users[idx].enrolledCourses.push(courseId);
-    saveUsers(users);
-  }
 }

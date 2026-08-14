@@ -87,7 +87,7 @@ export default function RegisterPage() {
     const err = validate();
     if (err) { setLocalError(err); return; }
     setSubmitting(true);
-    const ok = register({
+    const ok = await register({
       name: form.name,
       email: form.email,
       password: form.password,

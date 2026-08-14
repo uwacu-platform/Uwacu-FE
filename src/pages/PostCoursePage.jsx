@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth, saveCourse } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
+import { createCourse } from "../services/courseService.js";
 
 const tags = ["Language", "Visual Arts", "History", "Ceremony", "Music", "Craft", "Dance", "Literature"];
 const levels = ["Beginner", "Intermediate", "Advanced", "All Levels"];
 
 export default function PostCoursePage() {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -16,9 +17,13 @@ export default function PostCoursePage() {
     level: "",
     duration: "",
     description: "",
+    price: "0",
     lessons: ["", "", ""],
   });
+  const [thumbnail, setThumbnail] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState(null);
 
   function handleChange(e) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -43,27 +48,23 @@ export default function PostCoursePage() {
     });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const validLessons = form.lessons.filter((l) => l.trim());
-    const course = {
-      id: `course_${Date.now()}`,
-      title: form.title,
-      tag: form.tag,
-      level: form.level,
-      duration: form.duration,
-      desc: form.description,
-      lessons: validLessons,
-      lessonCount: validLessons.length,
-      instructorId: user.id,
-      instructorName: user.name,
-      img: "src/assets/Kubumba.png",
-      isUserCourse: true,
-      createdAt: new Date().toISOString(),
-    };
-    saveCourse(course);
-    refreshUser();
-    setSubmitted(true);
+    setApiError(null);
+    setSubmitting(true);
+    try {
+      await createCourse({
+        title: form.title,
+        description: form.description,
+        price: form.price || "0",
+        thumbnail: thumbnail || undefined,
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setApiError(err.message || "Failed to publish course. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -265,13 +266,66 @@ export default function PostCoursePage() {
             </div>
           </div>
 
+          {/* Price + Thumbnail */}
+          <div className="bg-brand-white border border-brand-brown/15 rounded-sm shadow-sm p-6 flex flex-col gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Price */}
+              <div>
+                <label className="block text-brand-charcoal text-xs font-bold uppercase tracking-widest mb-2 font-sans">
+                  Price (RWF)
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  id="course-price"
+                  value={form.price}
+                  onChange={handleChange}
+                  min="0"
+                  placeholder="0 for free"
+                  className="w-full px-4 py-3 bg-brand-offwhite border border-brand-brown/20 rounded-sm font-sans text-sm text-brand-charcoal placeholder-brand-charcoal/30 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/10 transition-all"
+                />
+              </div>
+              {/* Thumbnail */}
+              <div>
+                <label className="block text-brand-charcoal text-xs font-bold uppercase tracking-widest mb-2 font-sans">
+                  Thumbnail Image
+                </label>
+                <input
+                  type="file"
+                  id="course-thumbnail"
+                  accept="image/*"
+                  onChange={(e) => setThumbnail(e.target.files[0] || null)}
+                  className="w-full px-4 py-2.5 bg-brand-offwhite border border-brand-brown/20 rounded-sm font-sans text-sm text-brand-charcoal file:mr-3 file:py-1 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-bold file:bg-brand-green file:text-brand-white hover:file:bg-brand-brown transition-all"
+                />
+                {thumbnail && (
+                  <p className="text-[10px] text-brand-charcoal/50 font-sans mt-1">{thumbnail.name}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* API Error */}
+          {apiError && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-sm text-red-700 text-sm font-sans"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="flex-shrink-0">
+                <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+              {apiError}
+            </motion.div>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
             id="publish-course"
-            className="w-full py-4 bg-brand-green hover:bg-brand-green/90 text-brand-white font-sans font-semibold text-xs uppercase tracking-[0.18em] rounded-sm transition-all duration-300 hover:scale-[1.01] shadow-lg"
+            disabled={submitting}
+            className="w-full py-4 bg-brand-green hover:bg-brand-green/90 text-brand-white font-sans font-semibold text-xs uppercase tracking-[0.18em] rounded-sm transition-all duration-300 hover:scale-[1.01] shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100"
           >
-            Publish Course
+            {submitting ? "Publishing…" : "Publish Course"}
           </button>
         </form>
       </div>

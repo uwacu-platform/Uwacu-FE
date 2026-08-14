@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth, loadCourses, canPostCourse } from "../context/AuthContext";
+import { useAuth, canPostCourse } from "../context/AuthContext";
+import { getAllCourses } from "../services/courseService.js";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 60 },
@@ -89,12 +90,57 @@ export default function Learn() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState("student"); // "student" | "instructor"
 
-  const userCourses = loadCourses();
-  const allCourses = [...seedCourses, ...userCourses];
+  // API-fetched courses
+  const [apiCourses, setApiCourses] = useState([]);
+  const [fetchError, setFetchError] = useState(null);
+  const [fetching, setFetching] = useState(true);
 
-  const instructorCourses = user ? userCourses.filter((c) => c.instructorId === user.id) : [];
+  useEffect(() => {
+    setFetching(true);
+    getAllCourses()
+      .then((data) => {
+        // The API may return the list directly or nested under a key
+        const list = Array.isArray(data) ? data : (data?.courses || data?.data || []);
+        setApiCourses(list);
+        setFetchError(null);
+      })
+      .catch((err) => {
+        console.warn("Could not load courses from API, using seed data.", err.message);
+        setFetchError(err.message);
+      })
+      .finally(() => setFetching(false));
+  }, []);
 
-  const displayCourses = viewMode === "instructor" ? instructorCourses : allCourses;
+  // Merge API courses on top of seed courses (API takes priority by id)
+  const apiIds = new Set(apiCourses.map((c) => String(c.id)));
+  const mergedCourses = [
+    ...seedCourses.filter((c) => !apiIds.has(String(c.id))),
+    ...apiCourses.map((c) => ({
+      // Normalize API fields to UI shape
+      id: c.id,
+      title: c.title,
+      desc: c.description || c.desc || "",
+      img: c.thumbnail || c.img || "src/assets/Kubumba.png",
+      tag: c.category || c.tag || "Culture",
+      level: c.level || "All Levels",
+      lessonCount: c.lesson_count || c.lessonCount || 0,
+      duration: c.duration || "Self-paced",
+      price: c.price,
+      instructorName:
+        c.instructor_name ||
+        c.instructorName ||
+        (c.instructor
+          ? `${c.instructor.first_name || ""} ${c.instructor.last_name || ""}`.trim()
+          : "UWACU Academy"),
+      instructorId: c.instructor_id || c.instructorId,
+    })),
+  ];
+
+  const instructorCourses = user
+    ? mergedCourses.filter((c) => String(c.instructorId) === String(user.id))
+    : [];
+
+  const displayCourses = viewMode === "instructor" ? instructorCourses : mergedCourses;
 
   function handleEnrollClick(courseId) {
     if (!user) {
@@ -140,7 +186,7 @@ export default function Learn() {
       <div className="bg-brand-green py-10">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-3 gap-8 text-center">
           {[
-            { num: allCourses.length.toString(), label: "Cultural Courses" },
+            { num: fetching ? "…" : mergedCourses.length.toString(), label: "Cultural Courses" },
             { num: "1,200+", label: "Active Learners" },
             { num: "8", label: "Languages Available" },
           ].map((stat, i) => (
@@ -201,8 +247,31 @@ export default function Learn() {
             </div>
           )}
 
+          {/* API status indicators */}
+          {fetching && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-4">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="bg-brand-white rounded-sm border border-brand-brown/10 shadow-lg overflow-hidden animate-pulse">
+                  <div className="h-48 bg-brand-charcoal/10" />
+                  <div className="p-6 flex flex-col gap-3">
+                    <div className="h-4 bg-brand-charcoal/10 rounded w-3/4" />
+                    <div className="h-3 bg-brand-charcoal/10 rounded w-1/2" />
+                    <div className="h-3 bg-brand-charcoal/10 rounded w-full" />
+                    <div className="h-3 bg-brand-charcoal/10 rounded w-5/6" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {!fetching && fetchError && (
+            <div className="mb-6 px-4 py-3 bg-brand-yellow/10 border border-brand-yellow/30 rounded-sm text-brand-charcoal/70 text-xs font-sans flex items-center gap-2">
+              <span>⚠️</span>
+              <span>Could not reach the server — showing saved courses. ({fetchError})</span>
+            </div>
+          )}
+
           {/* Course Grid */}
-          {displayCourses.length > 0 ? (
+          {!fetching && displayCourses.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {displayCourses.map((course, i) => (
                 <motion.div

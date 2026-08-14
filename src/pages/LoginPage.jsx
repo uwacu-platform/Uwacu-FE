@@ -31,7 +31,7 @@ export default function LoginPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
-    const ok = login({ email: form.email, password: form.password });
+    const ok = await login({ email: form.email, password: form.password });
     setSubmitting(false);
     if (ok) navigate(redirect, { replace: true });
   }
