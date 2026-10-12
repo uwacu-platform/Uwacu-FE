@@ -1,13 +1,6 @@
-/**
- * UWACU API Client
- * Base URL: https://uwacu.onrender.com/api
- *
- * Automatically attaches JWT Bearer token from localStorage.
- * Includes automatic retry for Render backend cold-starts & connection resets.
- */
+import { API_BASE_URL, TOKEN_KEY, RETRY_ATTEMPTS, RETRY_DELAY_MS } from "../config/apiConfig.js";
 
-const BASE_URL = "https://uwacu.onrender.com/api";
-const TOKEN_KEY = "uwacu_access_token";
+const BASE_URL = API_BASE_URL;
 
 // ── Token helpers ────────────────────────────────────────────────────────────
 export function getToken() {
@@ -29,7 +22,7 @@ export function removeToken() {
  * @param {number} retriesLeft - number of automatic retry attempts
  * @returns {Promise<any>} - parsed JSON response
  */
-async function request(path, options = {}, retriesLeft = 1) {
+async function request(path, options = {}, retriesLeft = RETRY_ATTEMPTS) {
   const token = getToken();
 
   const headers = {
@@ -52,10 +45,10 @@ async function request(path, options = {}, retriesLeft = 1) {
       headers,
     });
   } catch (netErr) {
-    // Render free instances go to sleep and can cause ERR_CONNECTION_RESET or network timeout on initial connection
+    // Backend free instances (Render) go to sleep and can cause ERR_CONNECTION_RESET or network timeout on initial connection
     if (retriesLeft > 0) {
-      console.warn(`Network error (${netErr.message}), retrying in 2s... (Render server may be spinning up)`);
-      await new Promise((res) => setTimeout(res, 2000));
+      console.warn(`Network error (${netErr.message}), retrying in ${RETRY_DELAY_MS}ms... (Backend server may be spinning up)`);
+      await new Promise((res) => setTimeout(res, RETRY_DELAY_MS));
       return request(path, options, retriesLeft - 1);
     }
     const err = new Error(
@@ -75,10 +68,14 @@ async function request(path, options = {}, retriesLeft = 1) {
 
   if (!response.ok) {
     // Surface the backend error message if available
+    const detail = Array.isArray(data?.detail)
+      ? data.detail.map((item) => item.msg || item.message).filter(Boolean).join(" ")
+      : data?.detail;
     const message =
       data?.message ||
       data?.msg ||
       data?.error ||
+      detail ||
       `Request failed with status ${response.status}`;
     const err = new Error(message);
     err.status = response.status;

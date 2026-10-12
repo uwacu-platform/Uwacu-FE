@@ -4,6 +4,25 @@
  */
 
 import { api, setToken, removeToken } from "./api.js";
+import { API_ENDPOINTS } from "../config/apiConfig.js";
+
+function getAccessToken(response) {
+  return (
+    response?.access_token ||
+    response?.accessToken ||
+    response?.token ||
+    response?.data?.access_token ||
+    response?.data?.accessToken ||
+    response?.data?.token ||
+    null
+  );
+}
+
+function saveAccessToken(response) {
+  const token = getAccessToken(response);
+  if (token) setToken(token);
+  return token;
+}
 
 /**
  * Register a new user.
@@ -11,7 +30,7 @@ import { api, setToken, removeToken } from "./api.js";
  * Body: { email, username, password, first_name, last_name, role }
  */
 export async function registerUser({ email, username, password, first_name, last_name, role }) {
-  const data = await api.post("/auth/register", {
+  const data = await api.post(API_ENDPOINTS.AUTH.REGISTER, {
     email,
     username,
     password,
@@ -19,10 +38,9 @@ export async function registerUser({ email, username, password, first_name, last
     last_name,
     role,
   });
-  // Auto-login: if the API returns a token on registration, store it
-  if (data?.access_token) {
-    setToken(data.access_token);
-  }
+  // Some backends authenticate immediately after registration; persist that
+  // token so the profile request can use it.
+  saveAccessToken(data);
   return data;
 }
 
@@ -33,14 +51,12 @@ export async function registerUser({ email, username, password, first_name, last
  * Returns: { access_token, user }
  */
 export async function loginUser({ email, username, password }) {
-  const data = await api.post("/auth/login", {
+  const data = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
     ...(email ? { email } : {}),
     ...(username ? { username } : {}),
     password,
   });
-  if (data?.access_token) {
-    setToken(data.access_token);
-  }
+  saveAccessToken(data);
   return data;
 }
 
@@ -49,7 +65,7 @@ export async function loginUser({ email, username, password }) {
  * GET /api/auth/profile
  */
 export async function getProfile() {
-  return api.get("/auth/profile");
+  return api.get(API_ENDPOINTS.AUTH.PROFILE);
 }
 
 /**
@@ -58,7 +74,7 @@ export async function getProfile() {
  * Body: { first_name, last_name, bio }
  */
 export async function updateProfile({ first_name, last_name, bio }) {
-  return api.put("/auth/profile", { first_name, last_name, bio });
+  return api.put(API_ENDPOINTS.AUTH.UPDATE_PROFILE, { first_name, last_name, bio });
 }
 
 /**
@@ -66,7 +82,7 @@ export async function updateProfile({ first_name, last_name, bio }) {
  * DELETE /api/auth/account
  */
 export async function deleteAccount() {
-  const result = await api.delete("/auth/account");
+  const result = await api.delete(API_ENDPOINTS.AUTH.DELETE_ACCOUNT);
   removeToken();
   return result;
 }

@@ -27,7 +27,9 @@ const exploreItems = [
 
 const roleColors = {
   reader: "bg-brand-brown/20 text-brand-brown",
+  learner: "bg-brand-brown/20 text-brand-brown",
   author: "bg-brand-yellow/20 text-brand-charcoal",
+  vendor: "bg-brand-yellow/20 text-brand-charcoal",
   student: "bg-brand-green/20 text-brand-green",
   instructor: "bg-brand-yellow text-brand-charcoal",
   admin: "bg-brand-charcoal text-brand-yellow",
@@ -69,8 +71,9 @@ export default function UwacuNavbar() {
   }
 
   // User initials for avatar
+  const displayName = user?.name || user?.username || user?.email || "Member";
   const initials = user
-    ? user.name
+    ? displayName
         .split(" ")
         .slice(0, 2)
         .map((w) => w[0].toUpperCase())
@@ -161,7 +164,7 @@ export default function UwacuNavbar() {
                   {initials}
                 </span>
                 <span className="text-brand-white text-xs font-sans font-medium max-w-[100px] truncate">
-                  {user.name.split(" ")[0]}
+                  {displayName.split(" ")[0]}
                 </span>
                 <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm ${roleColors[user.role] || "bg-brand-white/20 text-brand-white"}`}>
                   {user.role}
@@ -173,9 +176,17 @@ export default function UwacuNavbar() {
               {userMenuOpen && (
                 <div className="absolute top-[calc(100%+12px)] right-0 min-w-[200px] bg-brand-green/98 backdrop-blur-xl border border-brand-yellow/20 rounded-sm py-2 shadow-2xl">
                   <div className="px-5 py-3 border-b border-brand-white/10">
-                    <div className="text-brand-white font-sans font-bold text-sm truncate">{user.name}</div>
+                    <div className="text-brand-white font-sans font-bold text-sm truncate">{displayName}</div>
                     <div className="text-brand-white/45 text-[10px] font-sans truncate">{user.email}</div>
                   </div>
+                  <Link
+                    to="/profile"
+                    onClick={() => setUserMenuOpen(false)}
+                    id="nav-profile"
+                    className="flex items-center gap-2.5 px-5 py-2.5 text-[11px] tracking-[0.1em] uppercase text-brand-white/85 hover:text-brand-yellow hover:bg-brand-white/5 transition-all font-sans"
+                  >
+                    <span>👤</span> My Profile
+                  </Link>
                   {(user.role === "author" || user.role === "instructor") && (
                     <Link
                       to="/stories/post"
@@ -222,19 +233,13 @@ export default function UwacuNavbar() {
           ) : (
             /* ── Guest: Login + Register ── */
             <>
-              <Link
-                to="/login"
-                id="nav-login"
+              <Link to="/login" id="nav-login"
                 className="text-brand-white/85 hover:text-brand-yellow text-xs tracking-[0.14em] uppercase font-sans font-semibold transition-colors duration-200"
-              >
-                Sign In
+              > Sign In
               </Link>
-              <Link
-                to="/register"
-                id="nav-register"
+              <Link to="/register" id="nav-register"
                 className="bg-brand-yellow hover:bg-brand-yellow/90 text-brand-charcoal text-xs tracking-[0.14em] uppercase px-5 py-2.5 rounded-sm font-bold transition-all duration-200 hover:-translate-y-px shadow-md"
-              >
-                Register
+              > Register
               </Link>
             </>
           )}
@@ -296,11 +301,14 @@ export default function UwacuNavbar() {
                     {initials}
                   </span>
                   <div>
-                    <div className="text-brand-white text-xs font-sans font-bold">{user.name}</div>
+                    <div className="text-brand-white text-xs font-sans font-bold">{displayName}</div>
                     <div className="text-brand-white/45 text-[10px] font-sans">{user.role}</div>
                   </div>
                 </div>
               </div>
+              <Link to="/profile" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
+                👤 My Profile
+              </Link>
               {(user.role === "author" || user.role === "instructor") && (
                 <Link to="/stories/post" onClick={() => setMobileOpen(false)} className="text-brand-white/80 hover:text-brand-yellow text-xs tracking-[0.16em] uppercase py-3.5 border-b border-brand-white/[0.06] transition-colors font-sans">
                   ✍️ Post a Story

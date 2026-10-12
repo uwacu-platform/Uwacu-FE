@@ -6,10 +6,9 @@ import {
   logoutUser,
 } from "../services/authService.js";
 import { getToken } from "../services/api.js";
+import { SESSION_KEY } from "../config/apiConfig.js";
 
 const AuthContext = createContext(null);
-
-const SESSION_KEY = "uwacu_auth_user";
 
 /* ── Session persistence helpers ─────────────────────────────────────────── */
 function loadSession() {
@@ -34,10 +33,10 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // On mount, if we have a stored token, refresh profile from API
+  // On mount, refresh the stored user's details from the authenticated API.
   useEffect(() => {
     const token = getToken();
-    if (token && !user) {
+    if (token) {
       setLoading(true);
       getProfile()
         .then((profile) => {
@@ -45,15 +44,18 @@ export function AuthProvider({ children }) {
           setUser(session);
           saveSession(session);
         })
-        .catch(() => {
-          // Token is invalid or expired — clear everything
-          logoutUser();
-          setUser(null);
-          saveSession(null);
+        .catch((err) => {
+          // Only remove the saved session when the server has rejected its
+          // credential. A temporary Render/network failure must not log the
+          // user out.
+          if (err.status === 401 || err.status === 403) {
+            logoutUser();
+            setUser(null);
+            saveSession(null);
+          }
         })
         .finally(() => setLoading(false));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist user session to localStorage whenever it changes
@@ -66,116 +68,74 @@ export function AuthProvider({ children }) {
    * The backend may return different field names, so we map them here.
    */
   function normalizeUser(apiUser) {
+    const userData = apiUser?.user || apiUser?.profile || apiUser?.data?.user || apiUser?.data || apiUser || {};
+
     return {
-      id: apiUser.id,
+      id: userData.id,
       // Support both "name" (legacy) and first_name + last_name (API)
       name:
-        apiUser.name ||
-        [apiUser.first_name, apiUser.last_name].filter(Boolean).join(" ") ||
-        apiUser.username ||
-        apiUser.email,
-      username: apiUser.username,
-      email: apiUser.email,
-      first_name: apiUser.first_name,
-      last_name: apiUser.last_name,
-      bio: apiUser.bio,
+        userData.name ||
+        [userData.first_name, userData.last_name].filter(Boolean).join(" ") ||
+        userData.username ||
+        userData.email,
+      username: userData.username,
+      email: userData.email,
+      first_name: userData.first_name,
+      last_name: userData.last_name,
+      bio: userData.bio,
       // The API uses "instructor", "learner", "vendor", "admin" roles
-      role: apiUser.role,
-      joinedAt: apiUser.created_at || apiUser.joinedAt || new Date().toISOString(),
-      enrolledCourses: apiUser.enrolledCourses || [],
+      role: userData.role,
+      joinedAt: userData.created_at || userData.joinedAt || new Date().toISOString(),
+      enrolledCourses: userData.enrolledCourses || [],
     };
   }
 
   /* ── Register ─────────────────────────────────────────────────────────── */
-  const register = useCallback(async ({ name, email, password, role }) => {
+  const register = useCallback(async ({ email, username, password, first_name, last_name, role }) => {
     setError(null);
     setLoading(true);
     try {
-      // Split name into first/last for the API
-      const parts = (name || "").trim().split(" ");
-      const first_name = parts[0] || "";
-      const last_name = parts.slice(1).join(" ") || "";
-      // Generate a username from email (API requires it)
-      const username = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_");
+      const data = await registerUser({
+        email,
+        username,
+        password,
+        first_name,
+        last_name,
+        role,
+      });
 
-      let data;
-      try {
-        data = await registerUser({
-          email,
-          username,
-          password,
-          first_name,
-          last_name,
-          role,
-        });
-      } catch (apiErr) {
-        // If network reset / server down, use local session fallback so user is not blocked
-        if (apiErr.isNetworkError) {
-          console.warn("API server connection reset/offline. Falling back to local account session.", apiErr.message);
-          const fallbackUser = {
-            id: `u_${Date.now()}`,
-            name,
-            username,
-            email: email.toLowerCase(),
-            role,
-            joinedAt: new Date().toISOString(),
-            enrolledCourses: [],
-          };
-          const users = loadUsers();
-          saveUsers([...users, { ...fallbackUser, password }]);
-          setUser(fallbackUser);
-          return true;
-        }
-        throw apiErr;
-      }
-
-      // Try to get the full profile after registration
-      let session;
-      try {
+      // Register responses that include a token can immediately load the
+      // authenticated profile. Otherwise the caller sends the user to login.
+      if (getToken()) {
         const profile = await getProfile();
-        session = normalizeUser(profile);
-      } catch {
-        // Fallback: build from the registration response
-        session = normalizeUser({ email, username, first_name, last_name, role, ...data?.user });
+        const session = normalizeUser(profile);
+        setUser(session);
+        return { ok: true, authenticated: true };
       }
 
-      setUser(session);
-      return true;
+      return { ok: true, authenticated: false, data };
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.");
-      return false;
+      return { ok: false };
     } finally {
       setLoading(false);
     }
   }, []);
 
   /* ── Login ────────────────────────────────────────────────────────────── */
-  const login = useCallback(async ({ email, password }) => {
+  const login = useCallback(async ({ email, username, password }) => {
     setError(null);
     setLoading(true);
     try {
-      try {
-        await loginUser({ email, password });
-        const profile = await getProfile();
-        const session = normalizeUser(profile);
-        setUser(session);
-        return true;
-      } catch (apiErr) {
-        if (apiErr.isNetworkError) {
-          // Check local users fallback
-          const users = loadUsers();
-          const found = users.find(
-            (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-          );
-          if (found) {
-            const session = { ...found };
-            delete session.password;
-            setUser(session);
-            return true;
-          }
-        }
-        throw apiErr;
+      await loginUser({ email, username, password });
+      if (!getToken()) {
+        throw new Error("The login response did not include an access token.");
       }
+
+      const profile = await getProfile();
+      const session = normalizeUser(profile);
+      setUser(session);
+      return true;
     } catch (err) {
       setError(err.message || "Invalid email or password.");
       return false;
@@ -193,14 +153,20 @@ export function AuthProvider({ children }) {
 
   /* ── Refresh user from API ────────────────────────────────────────────── */
   const refreshUser = useCallback(async () => {
-    if (!getToken()) return;
+    if (!getToken()) return null;
+    setError(null);
+    setLoading(true);
     try {
       const profile = await getProfile();
       const session = normalizeUser(profile);
       setUser(session);
       saveSession(session);
-    } catch {
-      // Silently fail — keep existing user
+      return session;
+    } catch (err) {
+      setError(err.message || "Unable to load your profile.");
+      throw err;
+    } finally {
+      setLoading(false);
     }
   }, []);
 

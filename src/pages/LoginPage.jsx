@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 
@@ -16,10 +16,15 @@ const UwacuIcon = () => (
 export default function LoginPage() {
   const { login, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const redirect = searchParams.get("redirect") || "/profile";
 
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({
+    email: location.state?.email || "",
+    username: location.state?.username || "",
+    password: "",
+  });
   const [showPass, setShowPass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,7 +36,11 @@ export default function LoginPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
-    const ok = await login({ email: form.email, password: form.password });
+    const ok = await login({
+      email: form.email,
+      username: form.username,
+      password: form.password,
+    });
     setSubmitting(false);
     if (ok) navigate(redirect, { replace: true });
   }
@@ -101,6 +110,12 @@ export default function LoginPage() {
             </Link>
           </p>
 
+          {location.state?.registered && (
+            <div className="mb-6 px-4 py-3 border border-green-200 bg-green-50 text-green-800 text-sm font-sans rounded-sm">
+              Account created. Sign in to view your profile.
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
             {/* Email */}
@@ -116,6 +131,24 @@ export default function LoginPage() {
                 onChange={handleChange}
                 required
                 placeholder="your@email.com"
+                className="w-full px-4 py-3.5 bg-brand-white border border-brand-brown/25 rounded-sm font-sans text-sm text-brand-charcoal placeholder-brand-charcoal/30 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/10 transition-all"
+              />
+            </div>
+
+            {/* Username */}
+            <div>
+              <label className="block text-brand-charcoal text-xs font-bold uppercase tracking-widest mb-2 font-sans">
+                Username
+              </label>
+              <input
+                type="text"
+                name="username"
+                id="login-username"
+                value={form.username}
+                onChange={handleChange}
+                required
+                autoComplete="username"
+                placeholder="john_doe"
                 className="w-full px-4 py-3.5 bg-brand-white border border-brand-brown/25 rounded-sm font-sans text-sm text-brand-charcoal placeholder-brand-charcoal/30 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/10 transition-all"
               />
             </div>

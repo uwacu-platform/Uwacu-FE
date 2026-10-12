@@ -5,34 +5,22 @@ import { useAuth } from "../context/AuthContext";
 
 const roles = [
   {
-    id: "reader",
-    label: "Reader",
+    id: "learner",
+    label: "Learner",
     icon: "📖",
     desc: "Explore stories and cultural content",
   },
   {
-    id: "author",
-    label: "Author",
+    id: "vendor",
+    label: "Contributor",
     icon: "✍️",
-    desc: "Read and post your own stories",
-  },
-  {
-    id: "student",
-    label: "Student",
-    icon: "🎓",
-    desc: "Enroll in courses and learn",
+    desc: "Share stories and cultural content",
   },
   {
     id: "instructor",
     label: "Instructor",
     icon: "🏫",
     desc: "Post courses and share knowledge",
-  },
-  {
-    id: "admin",
-    label: "Admin",
-    icon: "⚙️",
-    desc: "Monitor and update the system",
   },
 ];
 
@@ -51,8 +39,10 @@ export default function RegisterPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    name: "",
     email: "",
+    username: "",
+    first_name: "",
+    last_name: "",
     password: "",
     confirm: "",
     role: "",
@@ -74,8 +64,10 @@ export default function RegisterPage() {
   }
 
   function validate() {
-    if (!form.name.trim()) return "Please enter your full name.";
+    if (!form.first_name.trim()) return "Please enter your first name.";
+    if (!form.last_name.trim()) return "Please enter your last name.";
     if (!form.email.trim()) return "Please enter your email.";
+    if (!form.username.trim()) return "Please choose a username.";
     if (form.password.length < 6) return "Password must be at least 6 characters.";
     if (form.password !== form.confirm) return "Passwords do not match.";
     if (!form.role) return "Please select a role.";
@@ -87,14 +79,25 @@ export default function RegisterPage() {
     const err = validate();
     if (err) { setLocalError(err); return; }
     setSubmitting(true);
-    const ok = await register({
-      name: form.name,
+    const result = await register({
       email: form.email,
+      username: form.username,
       password: form.password,
+      first_name: form.first_name,
+      last_name: form.last_name,
       role: form.role,
     });
     setSubmitting(false);
-    if (ok) navigate("/", { replace: true });
+    if (result.ok) {
+      if (result.authenticated) {
+        navigate("/profile", { replace: true });
+      } else {
+        navigate("/login", {
+          replace: true,
+          state: { registered: true, email: form.email, username: form.username },
+        });
+      }
+    }
   }
 
   const displayError = localError || error;
@@ -153,21 +156,37 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-            {/* Full Name */}
-            <div>
-              <label className="block text-brand-charcoal text-xs font-bold uppercase tracking-widest mb-2 font-sans">
-                Full Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                id="reg-name"
-                value={form.name}
-                onChange={handleChange}
-                required
-                placeholder="Amina Uwase"
-                className="w-full px-4 py-3.5 bg-brand-white border border-brand-brown/25 rounded-sm font-sans text-sm text-brand-charcoal placeholder-brand-charcoal/30 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/10 transition-all"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-brand-charcoal text-xs font-bold uppercase tracking-widest mb-2 font-sans">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  name="first_name"
+                  id="reg-first-name"
+                  value={form.first_name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Jane"
+                  className="w-full px-4 py-3.5 bg-brand-white border border-brand-brown/25 rounded-sm font-sans text-sm text-brand-charcoal placeholder-brand-charcoal/30 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/10 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-brand-charcoal text-xs font-bold uppercase tracking-widest mb-2 font-sans">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  name="last_name"
+                  id="reg-last-name"
+                  value={form.last_name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Doe"
+                  className="w-full px-4 py-3.5 bg-brand-white border border-brand-brown/25 rounded-sm font-sans text-sm text-brand-charcoal placeholder-brand-charcoal/30 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/10 transition-all"
+                />
+              </div>
             </div>
 
             {/* Email */}
@@ -183,6 +202,23 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 placeholder="your@email.com"
+                className="w-full px-4 py-3.5 bg-brand-white border border-brand-brown/25 rounded-sm font-sans text-sm text-brand-charcoal placeholder-brand-charcoal/30 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/10 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-brand-charcoal text-xs font-bold uppercase tracking-widest mb-2 font-sans">
+                Username
+              </label>
+              <input
+                type="text"
+                name="username"
+                id="reg-username"
+                value={form.username}
+                onChange={handleChange}
+                required
+                autoComplete="username"
+                placeholder="jane_doe"
                 className="w-full px-4 py-3.5 bg-brand-white border border-brand-brown/25 rounded-sm font-sans text-sm text-brand-charcoal placeholder-brand-charcoal/30 focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/10 transition-all"
               />
             </div>

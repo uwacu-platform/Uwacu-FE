@@ -4,13 +4,14 @@
  */
 
 import { api } from "./api.js";
+import { API_ENDPOINTS } from "../config/apiConfig.js";
 
 /**
  * Get all courses.
  * GET /api/courses/
  */
 export async function getAllCourses() {
-  return api.get("/courses/");
+  return api.get(API_ENDPOINTS.COURSES.LIST);
 }
 
 /**
@@ -19,7 +20,7 @@ export async function getAllCourses() {
  * @param {string|number} courseId
  */
 export async function getCourse(courseId) {
-  return api.get(`/courses/${courseId}`);
+  return api.get(API_ENDPOINTS.COURSES.DETAIL(courseId));
 }
 
 /**
@@ -36,7 +37,7 @@ export async function createCourse({ title, description, price, thumbnail }) {
   if (thumbnail) {
     formData.append("thumbnail", thumbnail);
   }
-  return api.post("/courses/", formData);
+  return api.post(API_ENDPOINTS.COURSES.CREATE, formData);
 }
 
 /**
@@ -45,5 +46,5 @@ export async function createCourse({ title, description, price, thumbnail }) {
  * @param {string|number} courseId
  */
 export async function enrollInCourseAPI(courseId) {
-  return api.post(`/courses/${courseId}/enroll`, {});
+  return api.post(API_ENDPOINTS.COURSES.ENROLL(courseId), {});
 }

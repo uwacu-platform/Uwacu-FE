@@ -21,6 +21,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ProfilePage from "./pages/ProfilePage";
 
 // Dynamic / Protected Features
 import StoryDetailPage from "./pages/StoryDetailPage";
@@ -82,6 +83,14 @@ function AppInner() {
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/profile"
+            element={(
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            )}
+          />
 
           {/* Explore dropdown */}
           <Route path="/culture" element={<CultureHeritage />} />
